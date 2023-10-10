@@ -61,7 +61,7 @@ namespace EventGrid
             try
             {
                 var count = Interlocked.Increment(ref i);
-                if (count % 1000 == 0)
+                if (count % 100 == 0)
                 {
                     Console.WriteLine($"Done {count}");
                 }
@@ -105,7 +105,7 @@ namespace EventGrid
                 request.CertificateExtensions.Add(sanBuilder.Build());
 
                 var certificate = request.CreateSelfSigned(new DateTimeOffset(DateTime.UtcNow.AddDays(-1)), new DateTimeOffset(DateTime.UtcNow.AddDays(3650)));
-                certificate.FriendlyName = CertificateName;
+                //certificate.FriendlyName = CertificateName;
 
                 return new X509Certificate2(certificate.Export(X509ContentType.Pfx, "WeNeedASaf3rPassword"), "WeNeedASaf3rPassword", X509KeyStorageFlags.MachineKeySet);
             }
