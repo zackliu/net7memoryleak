@@ -1,11 +1,14 @@
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography;
+using System.Runtime.ConstrainedExecution;
 
 namespace EventGrid
 {
     public class Program
     {
+        static long i = 0;
+
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -44,24 +47,35 @@ namespace EventGrid
         static async Task RunAsync()
         {
             var cert = buildSelfSignedServerCertificate();
-
+            
             while (true)
             {
-                var handler = new HttpClientHandler();
-                try
+                _ = Task.Run(() => DoRequest(cert));
+                await Task.Delay(1);
+            }
+        }
+
+        static async Task DoRequest(X509Certificate2 cert)
+        {
+            var handler = new HttpClientHandler();
+            try
+            {
+                var count = Interlocked.Increment(ref i);
+                if (count % 1000 == 0)
                 {
-                    handler.ClientCertificates.Add(cert);
-                    var httpclient = new HttpClient(handler, disposeHandler: false);
-                    await httpclient.SendAsync(new HttpRequestMessage(HttpMethod.Get, new Uri("https://localhost:7251/test")));
+                    Console.WriteLine($"Done {count}");
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                }
-                finally
-                {
-                    handler.Dispose();
-                }
+                handler.ClientCertificates.Add(cert);
+                var httpclient = new HttpClient(handler, disposeHandler: false);
+                await httpclient.SendAsync(new HttpRequestMessage(HttpMethod.Get, new Uri("https://localhost:7251/test")));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            finally
+            {
+                handler.Dispose();
             }
         }
 
